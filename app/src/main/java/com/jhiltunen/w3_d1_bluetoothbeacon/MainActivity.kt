@@ -3,6 +3,8 @@ package com.jhiltunen.w3_d1_bluetoothbeacon
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothManager
 import android.bluetooth.le.BluetoothLeScanner
 import android.bluetooth.le.ScanCallback
@@ -14,7 +16,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -22,6 +27,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -84,11 +90,24 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel) {
-    val context = LocalContext.current
     val value: List<ScanResult>? by model.scanResults.observeAsState(null)
     val fScanning: Boolean by model.fScanning.observeAsState(false)
+    val connectionState by model.mConnectionState.observeAsState(-1)
+
+    val bpm by model.mBPM.observeAsState(0)
 
     Column(Modifier.padding(15.dp)) {
+        Text(text = when(connectionState) {
+            BluetoothLeViewModel.STATE_CONNECTED -> "Connected"
+            BluetoothLeViewModel.STATE_CONNECTING -> "Connecting"
+            BluetoothLeViewModel.STATE_DISCONNECTED -> "Disconnected"
+            else -> ""
+        })
+        if (bpm != 0) {
+            Text(text = "$bpm bpm", modifier = Modifier.clickable {
+                model.disconnectDevice()
+            })
+        }
         Button(modifier = Modifier
             .height(50.dp)
             .fillMaxWidth(), onClick = {
@@ -101,9 +120,9 @@ fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel
                 Text(text = "Start scanning")
             }
         }
-        Column {
+        Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
             value?.forEach { scanResult ->
-                ResultRow(result = scanResult)
+                ResultRow(result = scanResult, bluetoothViewModel = model)
             }
         }
     }
@@ -111,11 +130,19 @@ fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel
 
 @SuppressLint("MissingPermission")
 @Composable
-fun ResultRow(result: ScanResult) {
-    Log.d("COMPOSE", "$result")
-    Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-        Text(text = "${result.device.address} ", modifier = Modifier.weight(fill = false, weight = 2f), color = if (!result.isConnectable) Color.Gray else Color.Black )
-        result.device?.name?.let { Text(text = "$it | ", modifier = Modifier.weight(fill = false, weight = 2f), color = if (!result.isConnectable) Color.Gray else Color.Black ) }
-        Text(text = "${result.rssi} dBm", modifier = Modifier.weight(fill = false, weight = 1f), color = if (!result.isConnectable) Color.Gray else Color.Black )
+fun ResultRow(result: ScanResult, bluetoothViewModel: BluetoothLeViewModel) {
+    val context = LocalContext.current
+    Column {
+        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (result.isConnectable) {
+                    bluetoothViewModel.connectDevice(context, result.device)
+                }
+            }) {
+            Text(text = "${result.device.address} ", modifier = Modifier.weight(fill = false, weight = 2f), color = if (!result.isConnectable) Color.Gray else Color.Black )
+            result.device?.name?.let { Text(text = "$it | ", modifier = Modifier.weight(fill = false, weight = 2f), color = if (!result.isConnectable) Color.Gray else Color.Black ) }
+            Text(text = "${result.rssi} dBm", modifier = Modifier.weight(fill = false, weight = 1f), color = if (!result.isConnectable) Color.Gray else Color.Black )
+        }
     }
 }
