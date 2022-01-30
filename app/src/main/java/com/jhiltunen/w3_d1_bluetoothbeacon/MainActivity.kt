@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,7 +97,10 @@ fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel
 
     val bpm by model.mBPM.observeAsState(0)
 
-    Column(Modifier.padding(15.dp)) {
+    Column(
+        Modifier
+            .padding(15.dp)
+            .fillMaxWidth(), verticalArrangement = Arrangement.Top) {
         Text(text = when(connectionState) {
             BluetoothLeViewModel.STATE_CONNECTED -> "Connected"
             BluetoothLeViewModel.STATE_CONNECTING -> "Connecting"
@@ -104,10 +108,13 @@ fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel
             else -> ""
         })
         if (bpm != 0) {
-            Text(text = "$bpm bpm", modifier = Modifier.clickable {
-                model.disconnectDevice()
-            })
+            Text(text = "$bpm bpm", style = MaterialTheme.typography.h2, textAlign = TextAlign.Center, modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    model.disconnectDevice()
+                })
         }
+        Spacer(modifier = Modifier.size(15.dp))
         Button(modifier = Modifier
             .height(50.dp)
             .fillMaxWidth(), onClick = {
