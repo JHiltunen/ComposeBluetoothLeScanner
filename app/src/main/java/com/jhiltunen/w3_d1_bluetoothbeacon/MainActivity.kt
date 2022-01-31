@@ -136,13 +136,13 @@ fun ShowDevices(mBluetoothAdapter: BluetoothAdapter, model: BluetoothLeViewModel
             else -> ""
         })
         if (bpm != 0) {
-            Text(text = "$bpm bpm", style= MaterialTheme.typography.h2,textAlign = TextAlign.Center, modifier = Modifier
+            Text(text = "$bpm bpm", style = MaterialTheme.typography.h2, textAlign = TextAlign.Center, modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
                     model.disconnectDevice()
                 })
         }
-        Spacer(modifier = Modifier.height(30.dp))
+        Spacer(modifier = Modifier.size(15.dp))
         Button(modifier = Modifier
             .height(50.dp)
             .fillMaxWidth(), onClick = {
