@@ -8,7 +8,6 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
 import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -16,7 +15,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.*
-import java.util.logging.Logger
 
 class BluetoothLeViewModel : ViewModel() {
     companion object GattAttributes {
@@ -26,7 +24,8 @@ class BluetoothLeViewModel : ViewModel() {
         const val STATE_CONNECTED = 2
         val UUID_HEART_RATE_MEASUREMENT = UUID.fromString("00002a37-0000-1000-8000-00805f9b34fb")
         val UUID_HEART_RATE_SERVICE = UUID.fromString("0000180d-0000-1000-8000-00805f9b34fb")
-        val UUID_CLIENT_CHARACTERISTIC_CONFIG = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        val UUID_CLIENT_CHARACTERISTIC_CONFIG =
+            UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
     }
 
     val mBPM = MutableLiveData<Int>(0)
@@ -65,6 +64,7 @@ class BluetoothLeViewModel : ViewModel() {
     }
 
     private var mBluetoothGatt: BluetoothGatt? = null
+
     @SuppressLint("MissingPermission")
     fun connectDevice(context: Context, device: BluetoothDevice) {
         Log.i("DBG", "Try to connect to the address ${device.address}")
@@ -89,6 +89,7 @@ class BluetoothLeViewModel : ViewModel() {
                 gatt.close()
             }
         }
+
         @SuppressLint("MissingPermission")
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             super.onServicesDiscovered(gatt, status)
@@ -101,17 +102,22 @@ class BluetoothLeViewModel : ViewModel() {
                         for (gattCharacteristic in gattService.characteristics) {
                             Log.d("DBG", "Characteristic ${gattCharacteristic.uuid}")
                             /* setup the system for the notification messages */
-                            val characteristic = gatt.getService(UUID_HEART_RATE_SERVICE).getCharacteristic(
-                                UUID_HEART_RATE_MEASUREMENT
-                            )
+                            val characteristic =
+                                gatt.getService(UUID_HEART_RATE_SERVICE).getCharacteristic(
+                                    UUID_HEART_RATE_MEASUREMENT
+                                )
                             gatt.setCharacteristicNotification(characteristic, true)
 
                             if (gatt.setCharacteristicNotification(characteristic, true)) {
                                 // then enable them on the server
-                                val descriptor = characteristic.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
+                                val descriptor =
+                                    characteristic.getDescriptor(UUID_CLIENT_CHARACTERISTIC_CONFIG)
                                 descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                                 val writing = gatt.writeDescriptor(descriptor)
-                                val bpm = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
+                                val bpm = characteristic.getIntValue(
+                                    BluetoothGattCharacteristic.FORMAT_UINT16,
+                                    1
+                                )
                                 Log.d("DBG", "BPM: $bpm")
 
                             }
@@ -120,10 +126,19 @@ class BluetoothLeViewModel : ViewModel() {
                 }
             }
         }
-        override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt,
+            descriptor: BluetoothGattDescriptor,
+            status: Int
+        ) {
             Log.d("DBG", "onDescriptorWrite")
         }
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
             val bpm = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
             Log.d("DBG", "BPM: $bpm")
             mBPM.postValue(bpm)
