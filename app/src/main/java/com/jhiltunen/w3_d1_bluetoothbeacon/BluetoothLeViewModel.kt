@@ -30,6 +30,7 @@ class BluetoothLeViewModel : ViewModel() {
     }
 
     val mBPM = MutableLiveData<Int>(0)
+    val bpmList = MutableLiveData<MutableList<Int>>(ArrayList())
     val mConnectionState = MutableLiveData(-1)
 
     val scanResults = MutableLiveData<List<ScanResult>>(null)
@@ -126,6 +127,14 @@ class BluetoothLeViewModel : ViewModel() {
             val bpm = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 1)
             Log.d("DBG", "BPM: $bpm")
             mBPM.postValue(bpm)
+            bpmList.value?.add(bpm)
+            // Call the extension function to notify
+            bpmList.notifyObserver()
         }
+    }
+
+    // Kotlin Extension function to assign the LiveData to itself
+    fun <T> MutableLiveData<T>.notifyObserver() {
+        this.value = value
     }
 }
